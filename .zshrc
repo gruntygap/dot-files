@@ -114,8 +114,6 @@ alias gpn='git push --set-upstream origin ${${$(git symbolic-ref -q HEAD)##refs/
 alias fmt='terraform fmt --recursive'
 alias vim='nvim'
 
-# Enable access to homebrew
-eval "$(/opt/homebrew/bin/brew shellenv)"
 # Enable MISE
 eval "$(~/.local/bin/mise activate zsh)"
 source <(fzf --zsh)
