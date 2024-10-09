@@ -5,15 +5,16 @@
 
 # Setting profile to default so we don't risk using the MFA user to try refreshing itself
 # ... that doesn't work btw
-function aws_mfa {
-    export AWS_DEFAULT_PROFILE=default
+# Running this inside a sub-shell to ensure weird variables are not set
+function aws_mfa() (
+    AWS_DEFAULT_PROFILE=default
 
     echo "MFA Code:"
-    USER=grantg
-    CODE=$(read -e)
-    ARN=$(aws iam list-mfa-devices --user-name $USER --output text --query "MFADevices[0].SerialNumber")
-    JSON=$(aws sts get-session-token --duration-seconds 129600 --serial-number $ARN --token-code $CODE --output json --query 'Credentials')
-    aws configure set aws_access_key_id $(echo $JSON | jq --raw-output '.AccessKeyId') --profile mfa
-    aws configure set aws_secret_access_key $(echo $JSON | jq --raw-output '.SecretAccessKey') --profile mfa
-    aws configure set aws_session_token $(echo $JSON | jq --raw-output '.SessionToken') --profile mfa
-}
+    local user=grantg
+    local code=$(read -e)
+    local arn=$(aws iam list-mfa-devices --user-name $user --output text --query "MFADevices[0].SerialNumber")
+    local json=$(aws sts get-session-token --duration-seconds 129600 --serial-number $arn --token-code $code --output json --query 'Credentials')
+    aws configure set aws_access_key_id $(echo $json | jq --raw-output '.AccessKeyId') --profile mfa
+    aws configure set aws_secret_access_key $(echo $json | jq --raw-output '.SecretAccessKey') --profile mfa
+    aws configure set aws_session_token $(echo $json | jq --raw-output '.SessionToken') --profile mfa
+)
