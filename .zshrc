@@ -114,6 +114,12 @@ alias gpn='git push --set-upstream origin ${${$(git symbolic-ref -q HEAD)##refs/
 alias fmt='terraform fmt --recursive'
 alias vim='nvim'
 
+# Personally 📝 scripts
+# AWS MFA Jank Fest
+. ~/dot-files/scripts/aws_mfa.sh
+alias aws-mfa='aws_mfa'
+export AWS_DEFAULT_PROFILE="mfa"
+
 # Enable MISE
 eval "$(~/.local/bin/mise activate zsh)"
 source <(fzf --zsh)
