@@ -1,2 +1,4 @@
 # Ignore mise local files
 .mise.local.toml
+
+.DS_Store
