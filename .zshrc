@@ -9,6 +9,7 @@ fi
 
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
+export EDITOR="vim"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time Oh My Zsh is loaded, in which case,
@@ -118,10 +119,10 @@ alias vim='nvim'
 # AWS MFA Jank Fest
 . ~/dot-files/scripts/aws_mfa.sh
 alias aws-mfa='aws_mfa'
-export AWS_DEFAULT_PROFILE="mfa"
 
 # Enable MISE
 eval "$(~/.local/bin/mise activate zsh)"
+eval "$(~/.local/bin/mise hook-env -s zsh)"
 source <(fzf --zsh)
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
