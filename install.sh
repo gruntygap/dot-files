@@ -31,3 +31,12 @@ else
 
     echo "Stow installation complete."
 fi
+
+# Install the Homebrew packages defined alongside this script.
+if command -v brew >/dev/null 2>&1; then
+    script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)" || exit 1
+    echo "Installing Homebrew bundle..."
+    brew bundle install --file="$script_dir/brew.bundle" || exit 1
+else
+    echo "Homebrew not found. Skipping brew.bundle installation."
+fi
