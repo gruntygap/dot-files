@@ -2,4 +2,5 @@
 
 stow zsh
 stow git
+stow tmux
 
