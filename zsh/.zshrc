@@ -119,22 +119,56 @@ alias gpn='git push --set-upstream origin ${${$(git symbolic-ref -q HEAD)##refs/
 alias fmt='terraform fmt --recursive'
 alias vim='nvim'
 
-# Personally 📝 scripts
-# AWS MFA Jank Fest
-. ~/dot-files/scripts/aws_mfa.sh
-alias aws-mfa='aws_mfa'
-
 # Enable MISE
 eval "$(~/.local/bin/mise activate zsh)"
 eval "$(~/.local/bin/mise hook-env -s zsh)"
 source <(fzf --zsh)
 
 # bun completions
-[ -s "/Users/grantgapinski/.bun/_bun" ] && source "/Users/grantgapinski/.bun/_bun"
+# [ -s "/Users/grantgapinski/.bun/_bun" ] && source "/Users/grantgapinski/.bun/_bun"
 
 # bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+# export BUN_INSTALL="$HOME/.bun"
+# export PATH="$BUN_INSTALL/bin:$PATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+# Shell function (drop in ~/.zshrc, then call: aires dev|staging|usmc)
+source ~/.env
+
+aires() {
+  local env=$1 region=us-gov-east-1
+
+  if [[ -z $env ]]; then
+    print -u2 "usage: aires dev|staging|usmc"
+    return 2
+  fi
+
+  # Newest running instance first; several can share the aires-$env Name tag.
+  local -a hosts
+  hosts=(${(f)"$(aws ec2 describe-instances --region $region \
+    --filters "Name=tag:Name,Values=aires-$env" "Name=instance-state-name,Values=running" \
+    --query 'reverse(sort_by(Reservations[].Instances[], &LaunchTime))[].PrivateIpAddress' \
+    --output text | tr '\t' '\n')"})
+
+  if (( ${#hosts} == 0 )); then
+    print -u2 "aires: no running instance tagged aires-$env in $region"
+    return 1
+  fi
+  if (( ${#hosts} > 1 )); then
+    print -u2 "aires: ${#hosts} running instances tagged aires-$env; using newest ($hosts[1]) of: $hosts"
+  fi
+
+  eval "$(ssh-agent -s)" >/dev/null
+  if ! aws secretsmanager get-secret-value --region $region --secret-id "aires/Keypair/$env" \
+       --query SecretString --output text | ssh-add -q -t 3600 -; then
+    print -u2 "aires: failed to load keypair aires/Keypair/$env"
+    kill "$SSH_AGENT_PID" 2>/dev/null
+    return 1
+  fi
+
+  ssh "ec2-user@$hosts[1]"
+  kill "$SSH_AGENT_PID" 2>/dev/null
+}
+
