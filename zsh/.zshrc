@@ -1,9 +1,13 @@
+# emulate zsh -c "$(direnv export zsh)"
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
+
+# emulate zsh -c "$(direnv hook zsh)"
 
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
@@ -124,6 +128,13 @@ alias aws-mfa='aws_mfa'
 eval "$(~/.local/bin/mise activate zsh)"
 eval "$(~/.local/bin/mise hook-env -s zsh)"
 source <(fzf --zsh)
+
+# bun completions
+[ -s "/Users/grantgapinski/.bun/_bun" ] && source "/Users/grantgapinski/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
