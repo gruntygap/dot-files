@@ -137,13 +137,34 @@ source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 # Shell function (drop in ~/.zshrc, then call: aires dev|staging|usmc)
 source ~/.env
 
-aires() {
+aires() (
   local env=$1 region=us-gov-east-1
+  local action=${2:-ssh}
 
   if [[ -z $env ]]; then
-    print -u2 "usage: aires dev|staging|usmc"
+    print -u2 "usage: aires dev|staging|usmc [scp <options> <source> <destination>]"
     return 2
   fi
+
+  case $action in
+    ssh)
+      if (( $# > 1 )); then
+        print -u2 "usage: aires dev|staging|usmc [scp <options> <source> <destination>]"
+        return 2
+      fi
+      ;;
+    scp)
+      if (( $# < 4 )); then
+        print -u2 "usage: aires $env scp <options> <source> <destination>"
+        print -u2 "example: aires $env scp ./script.sh :/tmp/"
+        return 2
+      fi
+      ;;
+    *)
+      print -u2 "aires: unknown action: $action"
+      return 2
+      ;;
+  esac
 
   # Newest running instance first; several can share the aires-$env Name tag.
   local -a hosts
@@ -160,15 +181,34 @@ aires() {
     print -u2 "aires: ${#hosts} running instances tagged aires-$env; using newest ($hosts[1]) of: $hosts"
   fi
 
-  eval "$(ssh-agent -s)" >/dev/null
+  eval "$(ssh-agent -s)" >/dev/null || return 1
+  trap 'kill "$SSH_AGENT_PID" 2>/dev/null' EXIT
   if ! aws secretsmanager get-secret-value --region $region --secret-id "aires/Keypair/$env" \
        --query SecretString --output text | ssh-add -q -t 3600 -; then
     print -u2 "aires: failed to load keypair aires/Keypair/$env"
-    kill "$SSH_AGENT_PID" 2>/dev/null
     return 1
   fi
 
-  ssh "ec2-user@$hosts[1]"
-  kill "$SSH_AGENT_PID" 2>/dev/null
-}
+  local result
+  if [[ $action == scp ]]; then
+    shift 2
+    local -a scp_args
+    local arg
+    for arg in "$@"; do
+      if [[ $arg == :* ]]; then
+        scp_args+=("ec2-user@$hosts[1]$arg")
+      else
+        scp_args+=("$arg")
+      fi
+    done
+    scp "${scp_args[@]}"
+    result=$?
+  else
+    ssh "ec2-user@$hosts[1]"
+    result=$?
+  fi
+  return $result
+)
+
+source ~/scripts/fzf-git.sh/fzf-git.sh
 
